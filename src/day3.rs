@@ -46,7 +46,7 @@ struct Count {
 }
 
 impl Count {
-    fn from_vec(v: Vec<Bit>) -> Self {
+    fn from_vec(v: Vec<&Bit>) -> Self {
         v.iter().fold(Self { zeros: 0, ones: 0 }, |acc, v| match v {
             Bit::Zero => Self {
                 zeros: acc.zeros + 1,
@@ -74,10 +74,19 @@ impl Count {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Reading(Vec<Bit>);
 
 impl Reading {
+    fn len(&self) -> usize {
+        self.get_reading().len()
+    }
+    fn get_reading(&self) -> &Vec<Bit> {
+        &self.0
+    }
+    fn at(&self, ix: usize) -> Result<&Bit> {
+        self.get_reading().get(ix).ok_or(anyhow!("bad index"))
+    }
     fn parse(s: &str) -> Result<Reading> {
         s.chars()
             .map(|c| (Bit::try_from(c).map_err(|_| anyhow!("digit parsing error"))))
@@ -86,19 +95,23 @@ impl Reading {
     }
 
     fn as_number(&self) -> u32 {
-        self.0
+        self.get_reading()
             .iter()
             .rev()
             .fold((0, 1), |acc, v| (acc.0 + v.as_number(acc.1), acc.1 * 2))
             .0
+    }
+    fn matches_bit_at(&self, bit: &Bit, pos: usize) -> Result<bool> {
+        let b = self.at(pos)?;
+        Ok(b == bit)
     }
 }
 
 fn digits_at(readings: &[Reading], ix: usize) -> Result<Count> {
     readings
         .iter()
-        .map(|v| v.0.get(ix).ok_or(anyhow!("bad index")).map(|v| *v))
-        .collect::<Result<Vec<Bit>>>()
+        .map(|v| v.at(ix))
+        .collect::<Result<Vec<&Bit>>>()
         .map(Count::from_vec)
 }
 
@@ -120,7 +133,7 @@ fn parse_readings(s: &str) -> IResult<&str, Vec<Reading>> {
 fn _to_ds(readings: &[Reading]) -> Result<Vec<Count>> {
     let l = readings
         .iter()
-        .map(|v| v.0.len())
+        .map(|v| v.len())
         .max()
         .ok_or(anyhow!("len error"))?;
     (0..l)
@@ -153,31 +166,53 @@ pub fn day3_1() -> Result<u32> {
     Ok(epsilon * gamma)
 }
 
-#[derive(Debug)]
-struct BitCriterion {
-    pos: usize,
-    bit: Bit,
+fn count_at(readings: &[Reading], pos: usize) -> Result<Count> {
+    let bits = readings
+        .iter()
+        .map(|r| r.at(pos))
+        .collect::<Result<Vec<&Bit>>>()?;
+    Ok(Count::from_vec(bits))
 }
 
-impl BitCriterion {
-    fn filter_reading(&self, reading: &Reading) -> Result<bool> {
-        let bit = reading.0.get(self.pos).ok_or(anyhow!("index error"))?;
-        Ok(self.bit == *bit)
-    }
-
-    fn filter_readings<'a>(&self, readings: &'a [Reading]) -> Result<Vec<&'a Reading>> {
-        let mut filtered = Vec::new();
-        for reading in readings.iter() {
-            if self.filter_reading(reading)? {
-                filtered.push(reading);
-            }
+fn filter_by_bit_at(readings: &[Reading], bit: &Bit, pos: usize) -> Result<Vec<Reading>> {
+    let mut filtered = Vec::new();
+    for r in readings {
+        let matches = r.matches_bit_at(bit, pos)?;
+        if matches {
+            filtered.push(r.clone())
         }
-        Ok(filtered)
     }
+    Ok(filtered)
+}
 
-    fn from_readings(readings: &[Reading], pos: usize) -> Result<Self> {
-        todo!();
+fn get_rating(readings: &[Reading], decider_fn: impl Fn(&Count) -> Bit) -> Result<u32> {
+    let mut pos = 0;
+    let mut filtered = Vec::from(readings);
+    while filtered.len() > 1 {
+        let ca = count_at(filtered.as_slice(), pos)?;
+        let decider = decider_fn(&ca);
+        filtered = filter_by_bit_at(filtered.as_slice(), &decider, pos)?;
+        pos += 1;
     }
+    Ok(filtered[0].as_number())
+}
+
+fn get_oxygen_rating(readings: &[Reading]) -> Result<u32> {
+    get_rating(readings, |c| c.max())
+}
+
+fn get_co2_rating(readings: &[Reading]) -> Result<u32> {
+    get_rating(readings, |c| c.min())
+}
+
+pub fn day3_2() -> Result<u32> {
+    let input = get_input()?;
+    let readings = parse_readings(&input)
+        .map_err(|_| anyhow!("parser error"))?
+        .1;
+    let oxygen = get_oxygen_rating(&readings)?;
+    let co2 = get_co2_rating(&readings)?;
+    Ok(oxygen * co2)
 }
 
 #[cfg(test)]
@@ -196,7 +231,9 @@ mod tests {
 
     #[test]
     fn test_from_vec() {
-        let v = vec![Bit::Zero, Bit::Zero, Bit::One, Bit::One, Bit::Zero];
+        let z = Bit::Zero;
+        let o = Bit::One;
+        let v = vec![&z, &z, &o, &o, &z];
         let expected = Count { zeros: 3, ones: 2 };
         let actual = Count::from_vec(v);
         assert_eq!(expected, actual);
