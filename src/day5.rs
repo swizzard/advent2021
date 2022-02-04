@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::fs;
-use std::io::Read;
 
 use anyhow::{anyhow, Result};
 use nom::{
@@ -11,6 +9,8 @@ use nom::{
     sequence::separated_pair,
     IResult,
 };
+
+use crate::get_input::get_input;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct Point {
@@ -145,13 +145,6 @@ fn parse_lines_hvd(s: &str) -> IResult<&str, Vec<Line>> {
     })(s)
 }
 
-fn get_input() -> Result<String> {
-    let mut s = String::new();
-    let mut f = fs::File::open("day5.txt")?;
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
-
 #[derive(Debug)]
 struct Overlaps(HashMap<Point, usize>);
 
@@ -173,13 +166,13 @@ impl Overlaps {
 }
 
 pub fn day5_1() -> Result<usize> {
-    let input = get_input()?;
+    let input = get_input("day5.txt")?;
     let (_, lines) = parse_lines_hv(&input).map_err(|_| anyhow!("parser error"))?;
     Ok(Overlaps::from_lines(lines).multi_count())
 }
 
 pub fn day5_2() -> Result<usize> {
-    let input = get_input()?;
+    let input = get_input("day5.txt")?;
     let (_, lines) = parse_lines_hvd(&input).map_err(|_| anyhow!("parser error"))?;
     Ok(Overlaps::from_lines(lines).multi_count())
 }

@@ -1,10 +1,4 @@
-extern crate anyhow;
-extern crate nom;
-
-use std::convert::TryFrom;
-use std::fs;
-use std::io::Read;
-
+use crate::get_input::get_input;
 use anyhow::{anyhow, Result};
 use nom::{
     character::complete::{digit1, line_ending},
@@ -115,13 +109,6 @@ fn digits_at(readings: &[Reading], ix: usize) -> Result<Count> {
         .map(Count::from_vec)
 }
 
-fn get_input() -> Result<String> {
-    let mut s = String::new();
-    let mut f = fs::File::open("day3.txt")?;
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
-
 fn parse_reading(s: &str) -> IResult<&str, Reading> {
     map_res(digit1, Reading::parse)(s)
 }
@@ -157,7 +144,7 @@ fn epsilon_rate(readings: &[Reading]) -> Result<u32> {
 }
 
 pub fn day3_1() -> Result<u32> {
-    let input = get_input()?;
+    let input = get_input("day3.txt")?;
     let readings = parse_readings(&input)
         .map_err(|_| anyhow!("parser error"))?
         .1;
@@ -206,7 +193,7 @@ fn get_co2_rating(readings: &[Reading]) -> Result<u32> {
 }
 
 pub fn day3_2() -> Result<u32> {
-    let input = get_input()?;
+    let input = get_input("day3.txt")?;
     let readings = parse_readings(&input)
         .map_err(|_| anyhow!("parser error"))?
         .1;

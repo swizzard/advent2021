@@ -1,10 +1,3 @@
-extern crate anyhow;
-extern crate nom;
-
-use std::fs;
-use std::io;
-use std::io::Read;
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -14,6 +7,7 @@ use nom::{
     IResult,
 };
 
+use crate::get_input::get_input;
 use anyhow::{anyhow, Result};
 
 #[derive(Eq, Debug, PartialEq)]
@@ -78,19 +72,12 @@ fn step(pos: Pos, msg: &Msg) -> Pos {
     }
 }
 
-fn get_input() -> io::Result<String> {
-    let mut s = String::new();
-    let mut f = fs::File::open("day2.txt")?;
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
-
 fn parse_msgs(s: &str) -> IResult<&str, Vec<Msg>> {
     separated_list1(line_ending, Msg::parse_msg)(s)
 }
 
 pub fn day2_1() -> Result<u32> {
-    let s = get_input()?;
+    let s = get_input("day2.txt")?;
     let msgs = parse_msgs(&s).map_err(|_| anyhow!("parser error"))?.1;
     let start = Pos {
         horizontal: 0,
@@ -126,7 +113,7 @@ fn day2_step(pos: Day2Pos, msg: &Msg) -> Day2Pos {
 }
 
 pub fn day2_2() -> Result<u32> {
-    let s = get_input()?;
+    let s = get_input("day2.txt")?;
     let msgs = parse_msgs(&s).map_err(|_| anyhow!("parser error"))?.1;
     let start = Day2Pos {
         horizontal: 0,

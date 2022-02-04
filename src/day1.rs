@@ -1,17 +1,9 @@
-use std::fs;
-use std::io;
-use std::io::Read;
 use std::num::ParseIntError;
 
-fn get_input() -> io::Result<String> {
-    let mut s = String::new();
-    let mut f = fs::File::open("day1.txt")?;
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
+use crate::get_input::get_input;
 
 fn parse_input() -> Result<Vec<u64>, ParseIntError> {
-    get_input()
+    get_input("day1.txt")
         .unwrap()
         .lines()
         .filter(|s| !s.is_empty())

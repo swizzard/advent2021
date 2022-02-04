@@ -1,9 +1,4 @@
-extern crate anyhow;
-extern crate nom;
-
-use std::fs;
-use std::io::Read;
-
+use crate::get_input::get_input;
 use anyhow::{anyhow, Result};
 use nom::{
     branch::alt,
@@ -84,13 +79,6 @@ impl BingoBoard {
     }
 }
 
-fn get_input() -> Result<String> {
-    let mut s = String::new();
-    let mut f = fs::File::open("day4.txt")?;
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
-
 fn parse_balls(s: &str) -> IResult<&str, Balls> {
     map_res(separated_list1(tag(","), digit1), |xs: Vec<&str>| {
         xs.into_iter().map(|x| x.parse()).collect()
@@ -146,7 +134,7 @@ fn parse_bingo(s: &str) -> IResult<&str, (Balls, Boards)> {
 }
 
 fn get_bingo() -> Result<(Balls, Boards)> {
-    let input = get_input()?;
+    let input = get_input("day4.txt")?;
     let (balls, boards) = parse_bingo(&input).map_err(|_| anyhow!("parser error"))?.1;
     Ok((balls, boards))
 }
