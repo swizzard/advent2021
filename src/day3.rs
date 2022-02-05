@@ -6,6 +6,7 @@ use nom::{
     multi::separated_list1,
     IResult,
 };
+use std::convert::TryFrom;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum Bit {

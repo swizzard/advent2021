@@ -3,6 +3,6 @@ use anyhow::Result;
 use advent2021::*;
 
 fn main() -> Result<()> {
-    println!("day5 2: {:?}", day5_2()?);
+    println!("day6 2: {:?}", day6_2()?);
     Ok(())
 }
